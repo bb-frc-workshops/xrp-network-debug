@@ -56,7 +56,7 @@ void checkAndPrintStatus() {
   if (millis() - _lastStatusPrintTime > STAT_PRINT_TIME_MS) {
     int numConnectedClients = wsServer.connectedClients();
     int usedHeap = rp2040.getUsedHeap();
-    Serial.printf("t:%u c:%d h:%d msg:%u\n", millis(), numConnectedClients, usedHeap, _wsMessageCount);
+    Serial.printf("[STAT] t:%u c:%d h:%d msg:%u\n", millis(), numConnectedClients, usedHeap, _wsMessageCount);
     _lastStatusPrintTime = millis();
   }
 }
@@ -68,29 +68,29 @@ void setup() {
 
   // Busy loop if there-s no WiFi hardware
   if (WiFi.status() == WL_NO_MODULE) {
-    Serial.println("No WiFi module");
+    Serial.println("[NET] No WiFi module");
     while (true);
   }
 
   WiFi.setHostname("XRP");
   bool result = WiFi.softAP("XRP", "0123456789");
   if (result) {
-    Serial.println("WiFi AP Ready");
+    Serial.println("[NET] WiFi AP Ready");
   }
   else {
-    Serial.println("AP setup FAILED");
+    Serial.println("[NET] AP setup FAILED");
     while (true);
   }
 
   // Set up HTTP server routes
-  Serial.println("Setting up Web Server routes");
+  Serial.println("[NET] Setting up Web Server routes");
   webServer.on("/", handleIndexRoute);
 
   // Set up WS routing
-  Serial.println("Setting up WebSocket routing");
+  Serial.println("[NET] Setting up WebSocket routing");
   webServer.addHook(wsServer.hookForWebserver("/wpilibws", handleWSEvent));
 
-  Serial.println("Starting Web Server on port 3300");
+  Serial.println("[NET] Starting Web Server on port 3300");
   webServer.begin();
 
   Serial.printf("[NET] SSID: %s\n", WiFi.SSID().c_str());
