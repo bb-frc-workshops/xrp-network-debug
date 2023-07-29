@@ -1,19 +1,23 @@
 #include <Arduino.h>
 #include <WebServer.h>
-#include <WebSockets4WebServer.h>
+// #include <WebSockets4WebServer.h>
+
+#include <WebSocketsServer.h>
 #include <WiFi.h>
 
 #define BLINK_TIME_MS 500
 #define STAT_PRINT_TIME_MS 5000
 
-WebServer webServer(3300);
-WebSockets4WebServer wsServer;
+// WebServer webServer(3300);
+// WebSockets4WebServer wsServer;
+
+WebSocketsServer webSocketsServer(3300);
 
 unsigned long _wsMessageCount = 0;
 
-void handleIndexRoute() {
-  webServer.send(200, "text/plain", "Oh hi");
-}
+// void handleIndexRoute() {
+//   webServer.send(200, "text/plain", "Oh hi");
+// }
 
 void handleWSEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
   switch (type) {
@@ -21,7 +25,8 @@ void handleWSEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length) 
       Serial.printf("[NET:WS] [%u] Disconnected\n", num);
       break;
     case WStype_CONNECTED: {
-        IPAddress ip = wsServer.remoteIP(num);
+        // IPAddress ip = wsServer.remoteIP(num);
+        IPAddress ip = webSocketsServer.remoteIP(num);
         Serial.printf("[NET:WS] [%u] Connection from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
       }
       break;
@@ -54,7 +59,8 @@ void checkAndBlink() {
 unsigned long _lastStatusPrintTime;
 void checkAndPrintStatus() {
   if (millis() - _lastStatusPrintTime > STAT_PRINT_TIME_MS) {
-    int numConnectedClients = wsServer.connectedClients();
+    // int numConnectedClients = wsServer.connectedClients();
+    int numConnectedClients = webSocketsServer.connectedClients();
     int usedHeap = rp2040.getUsedHeap();
     Serial.printf("[STAT] t:%u c:%d h:%d msg:%u\n", millis(), numConnectedClients, usedHeap, _wsMessageCount);
     _lastStatusPrintTime = millis();
@@ -83,15 +89,18 @@ void setup() {
   }
 
   // Set up HTTP server routes
-  Serial.println("[NET] Setting up Web Server routes");
-  webServer.on("/", handleIndexRoute);
+  // Serial.println("[NET] Setting up Web Server routes");
+  // webServer.on("/", handleIndexRoute);
 
-  // Set up WS routing
-  Serial.println("[NET] Setting up WebSocket routing");
-  webServer.addHook(wsServer.hookForWebserver("/wpilibws", handleWSEvent));
+  // // Set up WS routing
+  // Serial.println("[NET] Setting up WebSocket routing");
+  // webServer.addHook(wsServer.hookForWebserver("/wpilibws", handleWSEvent));
 
-  Serial.println("[NET] Starting Web Server on port 3300");
-  webServer.begin();
+  // Serial.println("[NET] Starting Web Server on port 3300");
+  // webServer.begin();
+
+  webSocketsServer.onEvent(handleWSEvent);
+  webSocketsServer.begin();
 
   Serial.printf("[NET] SSID: %s\n", WiFi.SSID().c_str());
   Serial.printf("[NET] IP: %s\n", WiFi.localIP().toString().c_str());
@@ -105,9 +114,15 @@ void setup() {
 }
 
 void loop() {
-  webServer.handleClient();
-  wsServer.loop();
+  // webServer.handleClient();
+
+  Serial.println("===== WS - Loop - START ======");
+  // wsServer.loop();
+  webSocketsServer.loop();
+  Serial.println("===== WS - Loop - END ======");
 
   checkAndBlink();
   checkAndPrintStatus();
+
+  // delay(5);
 }
